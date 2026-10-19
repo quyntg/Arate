@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Arate</title>
+        <link rel="manifest" href="/manifest.json">
+        <meta name="theme-color" content="#22c55e">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="/css/style.css">
+    </head>
+    <body>
+        <main class="card" id="card">
+            <!-- Bước 1: chọn mức đánh giá -->
+            <section id="stepRate" class="step">
+                <p class="eyebrow">Đánh giá dịch vụ</p>
+                <h1>Bạn cảm thấy dịch vụ hôm nay thế nào?</h1>
+                <p class="sub">Ý kiến của bạn giúp chúng tôi phục vụ tốt hơn.</p>
+                <div class="rating" id="rating" role="radiogroup" aria-label="Mức độ hài lòng"></div>
+                <p class="picked" id="pickedLabel" aria-live="polite">Hãy chọn một mức đánh giá</p>
+                <div class="extra" id="extra" hidden>
+                    <label for="comment">Bạn muốn góp ý thêm? <span>(không bắt buộc)</span>
+                    </label>
+                    <textarea id="comment" rows="3" maxlength="500" placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
+                    <div class="counter">
+                        <span id="count">0</span>/500
+                    </div>
+                </div>
+                <p class="error" id="error" role="alert" hidden></p>
+                <button class="submit" id="submitBtn" type="button" disabled>
+                    <span class="btn-text">Gửi đánh giá</span>
+                    <span class="spinner" aria-hidden="true"></span>
+                </button>
+            </section>
+            <!-- Bước 2: cảm ơn -->
+            <section id="stepDone" class="step done" hidden>
+                <div class="done-icon" id="doneIcon"></div>
+                <h1>Cảm ơn bạn!</h1>
+                <p class="sub" id="doneMsg">Đánh giá của bạn đã được ghi nhận.</p>
+                <p class="sub small" id="countdownWrap" aria-live="polite">Quay trở về giao diện đánh giá trong <strong id="countdown">15</strong>s</p>
+                <button class="ghost" id="againBtn" type="button">Gửi đánh giá khác</button>
+            </section>
+        </main>
+        <!-- optional install button -->
+        <button id="installBtn" hidden class="install-btn">Thêm vào Màn hình chính</button>
+        <script src="/js/script.js"></script>
+    </body>
+</html>

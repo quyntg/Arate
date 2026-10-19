@@ -1,0 +1,22 @@
+{
+	"name": "Rating App",
+	"short_name": "Rating",
+	"description": "Đánh giá nhanh — cài đặt lên Màn hình chính như một app",
+	"start_url": "/html/rating.html?utm_source=homescreen",
+	"scope": "/",
+	"display": "fullscreen",
+	"background_color": "#ffffff",
+	"theme_color": "#22c55e",
+	"icons": [
+		{
+			"src": "/icons/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		},
+		{
+			"src": "/icons/icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png"
+		}
+	]
+}

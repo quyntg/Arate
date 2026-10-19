@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Arate</title>
+        <link rel="manifest" href="/manifest.json">
+        <meta name="theme-color" content="#22c55e">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body>
+        <main class="card login-card" role="main">
+            <p class="eyebrow">Chào mừng</p>
+            <h1>Đăng nhập vào hệ thống</h1>
+            <p class="sub">Đăng nhập để gửi đánh giá và quản lý dữ liệu. Sử dụng tài khoản được cấp.</p>
+
+            <div class="field">
+                <label for="username">Tên đăng nhập</label>
+                <input id="username" type="text" autocomplete="username" placeholder="john.doe">
+            </div>
+            <div class="field">
+                <label for="password">Mật khẩu</label>
+                <input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
+            </div>
+
+            <button id="loginBtn" class="submit" type="button">
+                <span class="btn-text">Đăng nhập</span>
+                <span class="spinner" id="loginSpinner" aria-hidden="true"></span>
+            </button>
+
+            <p class="error" id="loginError" role="alert"></p>
+            <p class="small">Nếu chưa có tài khoản, liên hệ quản trị để tạo.</p>
+        </main>
+
+        <script src="/js/script.js"></script>
+    </body>
+</html>
