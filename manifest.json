@@ -1,6 +1,6 @@
 {
-	"name": "Rating App",
-	"short_name": "Rating",
+	"name": "Arate",
+	"short_name": "Arate",
 	"description": "Đánh giá nhanh — cài đặt lên Màn hình chính như một app",
 	"start_url": "/html/rating.html?utm_source=homescreen",
 	"scope": "/",

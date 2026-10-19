@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Arate</title>
+        <link rel="manifest" href="../manifest.json">
+        <link rel="icon" href="../icons/icon-192.png" sizes="192x192">
+        <meta name="theme-color" content="#22c55e">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="../css/style.css">
+    </head>
+    <body>
+        <main class="card" id="adminCard">
+            <section id="summary" style="text-align:center">
+                <p class="eyebrow">Bảng điều khiển</p>
+                <h1>Thống kê đánh giá</h1>
+                <p class="sub">Xem dữ liệu đánh giá. Chọn khoảng thời gian để lọc.</p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 18px;align-items:center">
+                    <label style="font-weight:600;color:var(--muted)">Khoảng:</label>
+                    <select id="periodSelect" aria-label="Chọn khoảng thời gian">
+                        <option value="week">Tuần này</option>
+                        <option value="month" selected>Tháng này</option>
+                        <option value="year">Năm này</option>
+                        <option value="all">Tất cả</option>
+                    </select>
+                    <button id="refreshBtn" class="submit" style="width:auto;padding:8px 12px;margin:0">Làm mới</button>
+                </div>
+            </section>
+            <div style="overflow:auto;max-height:50vh;border-radius:10px;border:1px solid var(--line);padding:8px">
+                <table id="recordsTable" style="width:100%;border-collapse:collapse;font-size:14px">
+                    <tbody></tbody>
+                </table>
+            </div>
+        </main>
+        <script src="../js/script.js"></script>
+        <script src="../js/page-admin.js"></script>
+    </body>
+</html>
