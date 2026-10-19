@@ -477,3 +477,28 @@ body > main.login-card {
     input[type="text"], input[type="password"] { padding: 12px; }
 }
 
+/* Tablet / small laptop: prevent page-level scrolling by making the card fit viewport
+   and using internal scrolling when content overflows. This avoids horizontal/vertical
+   body scroll on tablet test devices. */
+@media (min-width: 600px) and (max-width: 1280px) {
+    html, body {
+        height: 100dvh; /* fill viewport height */
+        overflow: hidden; /* prevent body scroll */
+    }
+    body {
+        align-items: center;
+        justify-content: center;
+        padding: 0; /* keep card fully visible */
+    }
+    .card {
+        width: calc(100% - 32px);
+        max-width: 900px;
+        max-height: calc(100dvh - 32px);
+        margin: 16px;
+        overflow-y: auto; /* internal scroll if content taller than card */
+        -webkit-overflow-scrolling: touch;
+    }
+    /* Slightly reduce gaps to fit more comfortably on tablets */
+    .rating { gap: clamp(8px, 2vw, 12px); }
+}
+
