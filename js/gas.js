@@ -1,6 +1,33 @@
 const RECORD_SHEET_NAME = "record";
 const USER_SHEET_NAME = "user";
 
+// Monthly report settings. Edit the recipient and templates here.
+// Available placeholders: {{period}}, {{month}}, {{year}}, {{total}},
+// {{deskCount}}, {{tableHtml}} (HTML only), and {{tableText}} (plain text only).
+const MONTHLY_REPORT_CONFIG = {
+	recipient: "giaquy.adv@gmail.com",
+	sendHour: 8,
+	subjectTemplate: "Báo cáo đánh giá tháng {{month}}/{{year}} từ hệ thống Arate",
+	htmlTemplate: `
+		<div style="font-family:Arial,sans-serif;color:#17211d">
+			<p>Kính gửi Quý khách hàng,</p>
+			<h2>Báo cáo đánh giá tháng {{month}}/{{year}}</h2>
+			<p>Tổng số đánh giá: <strong>{{total}}</strong> tại {{deskCount}} quầy.</p>
+			{{tableHtml}}
+				<p style="margin-top:24px">Trân trọng,<br><strong>Đội ngũ Arate</strong></p>
+			</div>`,
+	textTemplate: `Kính gửi Quý khách hàng,
+	
+	BÁO CÁO ĐÁNH GIÁ THÁNG {{month}}/{{year}}
+
+	Tổng số đánh giá: {{total}} tại {{deskCount}} quầy.
+
+	{{tableText}}
+
+	Trân trọng,
+	Đội ngũ Arate`
+	};
+
 function doPost(e) {
 	// Parse request body safely
 	let data = {};
@@ -234,4 +261,165 @@ function json(obj) {
 		.setMimeType(ContentService.MimeType.JSON);
 }
 
+/**
+ * Run once from the Apps Script editor to install or refresh the monthly trigger.
+ * The trigger runs on day 1 at the configured hour in the spreadsheet timezone.
+ */
+function setupMonthlyRatingReportTrigger() {
+	var ss = SpreadsheetApp.getActiveSpreadsheet();
+	if (!ss) throw new Error('Spreadsheet not available');
+	var timezone = ss.getSpreadsheetTimeZone();
+	ScriptApp.getProjectTriggers().forEach(function(trigger) {
+		if (trigger.getHandlerFunction() === 'sendMonthlyRatingReport') {
+			ScriptApp.deleteTrigger(trigger);
+		}
+	});
+	ScriptApp.newTrigger('sendMonthlyRatingReport')
+		.timeBased()
+		.onMonthDay(1)
+		.atHour(MONTHLY_REPORT_CONFIG.sendHour)
+		.inTimezone(timezone)
+		.create();
+}
 
+function sendMonthlyRatingReport() {
+	var ss = SpreadsheetApp.getActiveSpreadsheet();
+	if (!ss) throw new Error('Spreadsheet not available');
+	var recipient = String(MONTHLY_REPORT_CONFIG.recipient || '').trim();
+	if (!recipient) throw new Error('Monthly report recipient is not configured');
+
+	var timezone = ss.getSpreadsheetTimeZone();
+	var currentParts = Utilities.formatDate(new Date(), timezone, 'yyyy-MM').split('-');
+	var year = Number(currentParts[0]);
+	var month = Number(currentParts[1]);
+	var reportDate = new Date(year, month - 2, 1);
+	var reportYear = reportDate.getFullYear();
+	var reportMonthNumber = reportDate.getMonth() + 1;
+	var reportMonth = reportYear + '-' + ('0' + reportMonthNumber).slice(-2);
+	var period = ('0' + reportMonthNumber).slice(-2) + '/' + reportYear;
+	var groups = getMonthlyRatingGroups_(ss, reportMonth, timezone);
+	var total = groups.reduce(function(sum, group) { return sum + group.total; }, 0);
+	var tableHtml = buildMonthlyReportHtmlTable_(groups);
+	var tableText = buildMonthlyReportTextTable_(groups);
+	var values = {
+		period: period,
+		month: String(reportMonthNumber),
+		year: String(reportYear),
+		total: String(total),
+		deskCount: String(groups.length),
+		tableHtml: tableHtml,
+		tableText: tableText
+	};
+
+	MailApp.sendEmail({
+		to: recipient,
+		subject: renderMonthlyReportTemplate_(MONTHLY_REPORT_CONFIG.subjectTemplate, values),
+		body: renderMonthlyReportTemplate_(MONTHLY_REPORT_CONFIG.textTemplate, values),
+		htmlBody: renderMonthlyReportTemplate_(MONTHLY_REPORT_CONFIG.htmlTemplate, values),
+		name: 'Arate'
+	});
+}
+
+function getMonthlyRatingGroups_(ss, reportMonth, timezone) {
+	var userSheet = ss.getSheetByName(USER_SHEET_NAME);
+	var recordSheet = ss.getSheetByName(RECORD_SHEET_NAME);
+	if (!userSheet) throw new Error('User sheet "' + USER_SHEET_NAME + '" not found');
+	if (!recordSheet) throw new Error('Record sheet "' + RECORD_SHEET_NAME + '" not found');
+
+	var deskUsers = [];
+	var userLastRow = userSheet.getLastRow();
+	if (userLastRow >= 2) {
+		userSheet.getRange(2, 2, userLastRow - 1, 4).getValues().forEach(function(row) {
+			var username = String(row[0] || '').trim();
+			var displayName = String(row[2] || '').trim();
+			var role = String(row[3] || '').trim().toLowerCase();
+			if (username && (role.indexOf('desk') !== -1 || role.indexOf('quay') !== -1 || role.indexOf('quầy') !== -1)) {
+				deskUsers.push({
+					username: username,
+					displayName: displayName || username,
+					total: 0,
+					counts: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+				});
+			}
+		});
+	}
+
+	var lastRow = recordSheet.getLastRow();
+	if (lastRow < 2 || !deskUsers.length) return deskUsers;
+	var groupsByUsername = {};
+	deskUsers.forEach(function(group) { groupsByUsername[group.username] = group; });
+
+	recordSheet.getRange(2, 1, lastRow - 1, 8).getValues().forEach(function(row) {
+		var rating = Number(row[4]);
+		if (!Number.isInteger(rating) || rating < 1 || rating > 5) return;
+		var timestamp = parseMonthlyReportTimestamp_(row[7]);
+		if (!timestamp || Utilities.formatDate(timestamp, timezone, 'yyyy-MM') !== reportMonth) return;
+
+		var position = String(row[2] || '').trim();
+		var positionName = String(row[3] || '').trim();
+		var group = groupsByUsername[position] || groupsByUsername[positionName];
+		if (!group) return;
+		group.counts[rating]++;
+		group.total++;
+	});
+	return deskUsers;
+}
+
+function parseMonthlyReportTimestamp_(value) {
+	if (value instanceof Date && !isNaN(value.getTime())) return value;
+	if (typeof value === 'number' && isFinite(value)) {
+		var numericDate = new Date(value);
+		return isNaN(numericDate.getTime()) ? null : numericDate;
+	}
+	if (typeof value !== 'string' || !value.trim()) return null;
+	var match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+	var date = match
+		? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]), Number(match[4] || 0), Number(match[5] || 0), Number(match[6] || 0))
+		: new Date(value);
+	return isNaN(date.getTime()) ? null : date;
+}
+
+function buildMonthlyReportHtmlTable_(groups) {
+	var headings = ['Quầy', 'Rất không hài lòng', 'Không hài lòng', 'Bình thường', 'Hài lòng', 'Rất hài lòng', 'Tổng'];
+	var header = headings.map(function(label) {
+		return '<th style="padding:10px;border:1px solid #d8e2dc;background:#eaf5ee;text-align:center;">' +
+			escapeMonthlyReportHtml_(label) + '</th>';
+	}).join('');
+	var rows = groups.map(function(group) {
+		var cells = ['<td style="padding:10px;border:1px solid #d8e2dc;text-align:center">' + escapeMonthlyReportHtml_(group.displayName) + '</td>'];
+		for (var rating = 1; rating <= 5; rating++) {
+			cells.push('<td style="padding:10px;border:1px solid #d8e2dc;text-align:center">' + group.counts[rating] + '</td>');
+		}
+		cells.push('<td style="padding:10px;border:1px solid #d8e2dc;text-align:center;font-weight:bold">' + group.total + '</td>');
+		return '<tr>' + cells.join('') + '</tr>';
+	});
+	if (!rows.length) {
+		rows.push('<tr><td colspan="7" style="padding:10px;border:1px solid #d8e2dc">Không có quầy hoặc dữ liệu đánh giá.</td></tr>');
+	}
+	return '<table style="border-collapse:collapse;width:100%"><thead><tr>' + header +
+		'</tr></thead><tbody>' + rows.join('') + '</tbody></table>';
+}
+
+function buildMonthlyReportTextTable_(groups) {
+	var header = ['Quầy', 'Rất không hài lòng', 'Không hài lòng', 'Bình thường', 'Hài lòng', 'Rất hài lòng', 'Tổng'].join('\t');
+	if (!groups.length) return header + '\nKhông có quầy hoặc dữ liệu đánh giá.';
+	var rows = groups.map(function(group) {
+		var values = [group.displayName];
+		for (var rating = 1; rating <= 5; rating++) values.push(String(group.counts[rating]));
+		values.push(String(group.total));
+		return values.join('\t');
+	});
+	return [header].concat(rows).join('\n');
+}
+
+function renderMonthlyReportTemplate_(template, values) {
+	return String(template || '').replace(/\{\{(period|month|year|total|deskCount|tableHtml|tableText)\}\}/g, function(match, key) {
+		return values[key];
+	});
+}
+
+function escapeMonthlyReportHtml_(value) {
+	return String(value).replace(/[&<>"']/g, function(character) {
+		return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[character];
+	});
+}
