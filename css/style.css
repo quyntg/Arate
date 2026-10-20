@@ -506,12 +506,13 @@ select[disabled] { opacity: 0.6; cursor: not-allowed; }
 #adminCard .sub { margin-bottom: 12px; }
 
 /* Table container styling */
-#adminCard > div[style*="overflow:auto"] {
-    background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.6));
+#adminCard .table-wrap {
+    overflow: visible;
+    background: #fff;
     border-radius: 14px;
-    padding: 12px;
-    border: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
-    box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+    padding: 4px;
+    border: 1px solid var(--line);
+    box-shadow: 0 6px 18px rgba(2,6,23,0.05);
 }
 
 #adminCard #recordsTable {
@@ -526,18 +527,21 @@ select[disabled] { opacity: 0.6; cursor: not-allowed; }
 
 /* Header */
 #adminCard #recordsTable thead th {
-    position: sticky;
-    top: 0;
-    z-index: 3;
-    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,250,0.96));
-    color: var(--muted);
+    background: color-mix(in srgb, var(--brand) 10%, white);
+    color: var(--brand-dark);
     font-weight: 700;
-    padding: 14px 16px;
+    padding: 14px 12px;
     text-align: center;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 2px solid color-mix(in srgb, var(--brand) 35%, var(--line));
     letter-spacing: 0.02em;
     font-size: 13px;
 }
+#adminCard #recordsTable thead th:first-child { border-top-left-radius: 10px; text-align: left; }
+#adminCard #recordsTable thead th:last-child { border-top-right-radius: 10px; }
+
+#adminCard #recordsTable td.col-name { text-align: left; font-weight: 600; }
+#adminCard #recordsTable td.col-total { font-weight: 700; color: var(--brand-dark); }
+#adminCard #recordsTable .empty-row td { color: var(--muted); padding: 20px; }
 
 /* Column alignment helpers */
 #adminCard #recordsTable th.col-center, #adminCard #recordsTable td.col-center { text-align: center; }
@@ -545,32 +549,25 @@ select[disabled] { opacity: 0.6; cursor: not-allowed; }
 
 /* Body rows */
 #adminCard #recordsTable tbody tr {
-    background: linear-gradient(180deg, #ffffff, #fffefc);
-    transition: background 0.18s ease, transform 0.12s ease;
-    border-radius: 8px;
+    background: #fff;
+    transition: background 0.18s ease;
 }
-#adminCard #recordsTable tbody tr + tr {
-    margin-top: 8px;
+#adminCard #recordsTable tbody tr:nth-child(even) {
+    background: #f8faf9;
 }
 #adminCard #recordsTable tbody tr:hover {
-    background: color-mix(in srgb, var(--brand) 6%, white);
-    transform: translateY(-3px);
+    background: color-mix(in srgb, var(--brand) 8%, white);
 }
 
 #adminCard #recordsTable td {
-    padding: 12px 16px;
+    padding: 12px;
     vertical-align: middle;
-    border-bottom: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
     color: var(--text);
     text-align: center;
     font-size: 14px;
 }
-
-/* Subtle separators using box-shadow on rows when in narrow mode */
-#adminCard #recordsTable tbody tr + tr td {
-    border-top: 1px solid rgba(0,0,0,0.03);
-}
-
+#adminCard #recordsTable tbody tr:last-child td { border-bottom: none; }
 /* Truncate long comments neatly */
 #adminCard #recordsTable td.comment {
     max-width: 48ch;
@@ -617,12 +614,12 @@ select[disabled] { opacity: 0.6; cursor: not-allowed; }
     #adminCard #recordsTable thead { display: none; }
     #adminCard #recordsTable, #adminCard #recordsTable tbody, #adminCard #recordsTable tr, #adminCard #recordsTable td { display: block; width: 100%; }
     #adminCard #recordsTable tr { margin-bottom: 12px; border-radius: 12px; background: var(--card); padding: 12px; box-shadow: 0 6px 18px rgba(2,6,23,0.04); }
-    #adminCard #recordsTable td { border-bottom: none; padding: 8px 0; }
-    #adminCard #recordsTable td:nth-child(1)::before { content: "STT"; display:block; color:var(--muted); font-size:12px; margin-bottom:6px; }
-    #adminCard #recordsTable td:nth-child(2)::before { content: "Quầy"; display:block; color:var(--muted); font-size:12px; margin-bottom:6px; }
-    #adminCard #recordsTable td:nth-child(3)::before { content: "Đánh giá"; display:block; color:var(--muted); font-size:12px; margin-bottom:6px; }
-    #adminCard #recordsTable td:nth-child(4)::before { content: "Góp ý"; display:block; color:var(--muted); font-size:12px; margin-bottom:6px; }
-    #adminCard #recordsTable td:nth-child(5)::before { content: "Thời gian"; display:block; color:var(--muted); font-size:12px; margin-bottom:6px; }
+    #adminCard #recordsTable td { border-bottom: none; padding: 6px 0; display: flex; justify-content: space-between; text-align: right; }
+    #adminCard #recordsTable td::before { content: attr(data-label); color: var(--muted); font-size: 13px; text-align: left; }
+    #adminCard #recordsTable td.col-name { font-size: 16px; text-align: left; }
+    #adminCard #recordsTable td.col-name::before { display: none; }
+    #adminCard #recordsTable .empty-row td { display: block; text-align: center; }
+    #adminCard #recordsTable .empty-row td::before { display: none; }
 
     /* Counts table adapt */
     #adminCard #counts table, #adminCard #counts tbody, #adminCard #counts tr, #adminCard #counts td { display:block; width:100%; }
@@ -655,5 +652,10 @@ select[disabled] { opacity: 0.6; cursor: not-allowed; }
     }
     /* Slightly reduce gaps to fit more comfortably on tablets */
     .rating { gap: clamp(8px, 2vw, 12px); }
+    #adminCard { max-height: none; overflow: visible; max-width: 1100px; }
+}
+@media (min-width: 600px) and (max-width: 1280px) {
+    html:has(#adminCard), body:has(#adminCard) { height: auto; overflow: auto; }
+    body:has(#adminCard) { align-items: flex-start; }
 }
 

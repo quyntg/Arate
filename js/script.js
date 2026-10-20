@@ -36,10 +36,18 @@ function initLogin() {
 	const loginError = $('loginError');
 	const spinner = $('loginSpinner');
 	if(!loginBtn) return;
-	loginBtn.addEventListener('click', async() => {
-		loginError && (loginError.style.display = 'none');
+	// Đã đăng nhập trước đó thì chuyển thẳng tới trang tương ứng
+	if(window.appNavigate && localStorage.getItem('username') && localStorage.getItem('password')) {
+		window.appNavigate(localStorage.getItem('role') === 'admin' ? '/admin' : '/rating');
+		return;
+	}
+	loginBtn.addEventListener('click', () => {
 		const username = ($('username') && $('username').value || '').trim();
 		const password = $('password') && $('password').value || '';
+		doLogin(username, password);
+	});
+	async function doLogin(username, password) {
+		loginError && (loginError.style.display = 'none');
 		if(!username || !password) {
 			if(loginError) {
 				loginError.textContent = 'Vui lòng nhập tên đăng nhập và mật khẩu.';
@@ -66,6 +74,10 @@ function initLogin() {
 			if(data.ok) {
 				localStorage.setItem('position', username);
 				localStorage.setItem('positionName', data.name);
+				localStorage.setItem('username', username);
+				localStorage.setItem('password', password);
+				localStorage.setItem('role', data.role || '');
+				
 				if(data.role === 'admin') {
 					window.appNavigate('/admin');
 				} else {
@@ -78,17 +90,17 @@ function initLogin() {
 				}
 			}
 		} catch(err) {
-					console.error('Login error:', err);
-					if(loginError) {
-						const msg = (err && err.message) ? err.message : 'Lỗi kết nối. Vui lòng thử lại.';
-						loginError.textContent = msg;
-						loginError.style.display = 'block';
-					}
-				} finally {
+			console.error('Login error:', err);
+			if(loginError) {
+				const msg = (err && err.message) ? err.message : 'Lỗi kết nối. Vui lòng thử lại.';
+				loginError.textContent = msg;
+				loginError.style.display = 'block';
+			}
+		} finally {
 			loginBtn.disabled = false;
 			if(spinner) spinner.style.display = 'none';
 		}
-	});
+	}
 }
 // Boot login only when no client router is present. When using the router,
 // the router will call initLogin() after it injects the login template.
@@ -413,49 +425,28 @@ function initAdmin() {
 
 	function renderGroups(groups) {
 		// groups: [{ position, total, avg, counts: {1:..} }, ...]
-			// Prefer rendering into #counts. If missing, fall back to recordsTableBody.
-			const target = countsEl || recordsTableBody;
-			if(!target) {
-				console.warn('No target to render groups (countsEl and recordsTableBody missing)');
-				return;
-			}
-			target.innerHTML = '';
+			const table = recordsTableBody.parentElement;
+			const oldHead = table.querySelector('thead');
+			if(oldHead) oldHead.remove();
+			recordsTableBody.innerHTML = '';
 			if (!groups || !groups.length) {
-				// show empty state
-				target.innerHTML = '<div style="padding:12px;color:var(--muted)">Không có dữ liệu</div>';
+				recordsTableBody.innerHTML = '<tr class="empty-row"><td colspan="7">Không có dữ liệu</td></tr>';
 				return;
 			}
-			// sort by total desc
 			groups.sort((a,b) => (b.total || 0) - (a.total || 0));
-			const table = document.createElement('table');
-			table.style.width = '100%';
-			table.style.borderCollapse = 'collapse';
-			table.innerHTML = `
-				<thead>
-					<tr style="text-align:left;color:var(--muted)">
-						<th style="padding:8px">Quầy</th>
-						<th style="padding:8px">Rất không hài lòng</th>
-						<th style="padding:8px">Không hài lòng</th>
-						<th style="padding:8px">Bình thường</th>
-						<th style="padding:8px">Hài lòng</th>
-						<th style="padding:8px">Rất hài lòng</th>
-						<th style="padding:8px">Tổng</th>
-					</tr>
-				</thead>`;
-			const tb = document.createElement('tbody');
+			const labels = ['Rất không hài lòng', 'Không hài lòng', 'Bình thường', 'Hài lòng', 'Rất hài lòng'];
+			const thead = document.createElement('thead');
+			thead.innerHTML = '<tr><th class="col-name">Quầy</th>' +
+				labels.map(l => `<th>${l}</th>`).join('') + '<th>Tổng</th></tr>';
+			table.insertBefore(thead, recordsTableBody);
 			groups.forEach(g => {
 				const tr = document.createElement('tr');
-				tr.innerHTML = `<td style="padding:8px">${escapeHtml(g.displayName)}</td>` +
-					`<td style="padding:8px">${(g.counts && g.counts[1])||0}</td>` +
-					`<td style="padding:8px">${(g.counts && g.counts[2])||0}</td>` +
-					`<td style="padding:8px">${(g.counts && g.counts[3])||0}</td>` +
-					`<td style="padding:8px">${(g.counts && g.counts[4])||0}</td>` +
-					`<td style="padding:8px">${(g.counts && g.counts[5])||0}</td>` +
-					`<td style="padding:8px">${g.total||0}</td>`;
-				tb.appendChild(tr);
+				const cells = [1,2,3,4,5].map((n, i) =>
+					`<td data-label="${labels[i]}">${(g.counts && g.counts[n])||0}</td>`).join('');
+				tr.innerHTML = `<td class="col-name" data-label="Quầy">${escapeHtml(g.displayName)}</td>` +
+					cells + `<td class="col-total" data-label="Tổng">${g.total||0}</td>`;
+				recordsTableBody.appendChild(tr);
 			});
-			table.appendChild(tb);
-			target.appendChild(table);
 		}
 
 	async function loadAndRender() {

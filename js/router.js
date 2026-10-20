@@ -38,6 +38,10 @@ const Router = (function() {
 	async function navigate(path, replace = false) {
 		try {
 			if(path === '/') {
+				if(localStorage.getItem('username') && localStorage.getItem('password')) {
+					await navigate('/rating', replace);
+					return;
+				}
 				if(templates['/']) {
 					renderHtml(templates['/'].html, { id: templates['/'].id, className: templates['/'].className });
 				} else {
